@@ -7,24 +7,19 @@ on:
       - master
   workflow_dispatch:
 
+# Grant write permission to GitHub Pages and id-token for OIDC
 permissions:
+  contents: read          # needed for checkout
+  pages: write            # needed to deploy
+  id-token: write         # needed for OIDC authentication
 
-  contents: write
-
-jobs:
-  build-and-deploy:
-
-  contents: read
-  pages: write
-  id-token: write
-
+# Prevent multiple deployments running at once
 concurrency:
-  group: pages
+  group: "pages"
   cancel-in-progress: true
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -34,7 +29,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
@@ -42,16 +37,14 @@ jobs:
       - name: Build
         run: npm run build
 
-
-      - name: Deploy to gh-pages branch
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: dist
+      # Optional but recommended: explicitly configure Pages
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5   # ← updated version
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: dist                        # ← must match your build output folder
 
   deploy:
     needs: build
@@ -63,4 +56,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
