@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react'
+import 'leaflet/dist/leaflet.css'
 
 export default function RadarMap({ lat, lon }) {
   const mapRef = useRef(null)
   const leafletRef = useRef(null)
   const radarLayerRef = useRef(null)
+  const controlsRef = useRef(null)
   const [frames, setFrames] = useState([])
   const [frameIdx, setFrameIdx] = useState(0)
   const [playing, setPlaying] = useState(false)
@@ -41,6 +43,14 @@ export default function RadarMap({ lat, lon }) {
       }).addTo(map)
 
       leafletRef.current = { map, L: L.default }
+
+      // Ensure the map calculates its container size correctly
+      setTimeout(() => map.invalidateSize(), 50)
+
+      // Prevent map drag events from reaching the controls panel
+      if (controlsRef.current) {
+        L.default.DomEvent.disableClickPropagation(controlsRef.current)
+      }
 
       // Load radar frames
       loadRadar(map, L.default)
@@ -112,7 +122,9 @@ export default function RadarMap({ lat, lon }) {
     return () => clearInterval(intervalRef.current)
   }, [playing, frames])
 
-  function handleFrameChange(idx) {
+  function handleFrameChange(e) {
+    e.stopPropagation()
+    const idx = Number(e.target.value)
     setFrameIdx(idx)
     if (leafletRef.current && frames.length) {
       const { map, L } = leafletRef.current
@@ -120,10 +132,17 @@ export default function RadarMap({ lat, lon }) {
     }
   }
 
+  function handlePlayPause(e) {
+    e.stopPropagation()
+    setPlaying(p => !p)
+  }
+
   function formatFrameTime(frame) {
     if (!frame?.time) return ''
     return new Date(frame.time * 1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
   }
+
+  const pastCount = frames.filter(f => f.time <= Date.now() / 1000).length
 
   if (!lat || !lon) return null
 
@@ -142,7 +161,7 @@ export default function RadarMap({ lat, lon }) {
         {frames.length > 0 && (
           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
             {formatFrameTime(frames[frameIdx])}
-            {frameIdx >= (frames.filter(f => f.time <= Date.now() / 1000).length) && ' (forecast)'}
+            {frameIdx >= pastCount && ' · Forecast'}
           </span>
         )}
       </div>
@@ -165,20 +184,31 @@ export default function RadarMap({ lat, lon }) {
         )}
       </div>
 
-      {/* Playback controls */}
+      {/* Playback controls — isolated from map pointer events */}
       {frames.length > 0 && (
-        <div style={{ padding: '12px 18px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div
+          ref={controlsRef}
+          style={{ padding: '12px 18px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}
+          onMouseDown={e => e.stopPropagation()}
+          onTouchStart={e => e.stopPropagation()}
+          onPointerDown={e => e.stopPropagation()}
+        >
           <input
             type="range"
             min={0}
             max={frames.length - 1}
             value={frameIdx}
-            onChange={e => handleFrameChange(Number(e.target.value))}
+            onChange={handleFrameChange}
+            onMouseDown={e => e.stopPropagation()}
+            onTouchStart={e => e.stopPropagation()}
+            onPointerDown={e => e.stopPropagation()}
             style={{ width: '100%', accentColor: '#4a9eff', cursor: 'pointer' }}
           />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <button
-              onClick={() => setPlaying(p => !p)}
+              onClick={handlePlayPause}
+              onMouseDown={e => e.stopPropagation()}
+              onTouchStart={e => e.stopPropagation()}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 background: 'rgba(74,158,255,0.15)',
@@ -188,6 +218,7 @@ export default function RadarMap({ lat, lon }) {
                 color: '#4a9eff',
                 fontSize: 13,
                 fontWeight: 500,
+                cursor: 'pointer',
               }}
             >
               {playing ? (

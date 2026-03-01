@@ -2,6 +2,43 @@ import React, { useState } from 'react'
 import WeatherIcon from './WeatherIcon.jsx'
 import { getWeatherIcon } from '../utils/nws.js'
 
+// Full temperature scale: -50°F to 120°F
+const SCALE_MIN = -50
+const SCALE_MAX = 120
+const SCALE_RANGE = SCALE_MAX - SCALE_MIN // 170
+
+// Color stops matching Apple Weather's palette
+const COLOR_STOPS = [
+  { p: 0,    r: 100, g: 120, b: 255 }, // -50°F: blue-purple
+  { p: 0.29, r: 74,  g: 158, b: 255 }, //   0°F: blue
+  { p: 0.48, r: 0,   g: 212, b: 255 }, //  32°F: cyan
+  { p: 0.65, r: 80,  g: 220, b: 120 }, //  60°F: green
+  { p: 0.76, r: 255, g: 209, b: 102 }, //  80°F: yellow
+  { p: 0.88, r: 255, g: 140, b: 66  }, // 100°F: orange
+  { p: 1.00, r: 255, g: 60,  b: 60  }, // 120°F: red
+]
+
+function tempToRgb(temp) {
+  const t = Math.max(SCALE_MIN, Math.min(SCALE_MAX, temp))
+  const pct = (t - SCALE_MIN) / SCALE_RANGE
+  for (let i = 1; i < COLOR_STOPS.length; i++) {
+    const prev = COLOR_STOPS[i - 1]
+    const curr = COLOR_STOPS[i]
+    if (pct <= curr.p) {
+      const f = (pct - prev.p) / (curr.p - prev.p)
+      const r = Math.round(prev.r + f * (curr.r - prev.r))
+      const g = Math.round(prev.g + f * (curr.g - prev.g))
+      const b = Math.round(prev.b + f * (curr.b - prev.b))
+      return `rgb(${r},${g},${b})`
+    }
+  }
+  return 'rgb(255,60,60)'
+}
+
+// Full-scale gradient string for the dimmed background track
+const FULL_GRADIENT =
+  'linear-gradient(90deg, rgb(100,120,255) 0%, rgb(74,158,255) 29%, rgb(0,212,255) 48%, rgb(80,220,120) 65%, rgb(255,209,102) 76%, rgb(255,140,66) 88%, rgb(255,60,60) 100%)'
+
 function formatDay(dateStr, index) {
   if (index === 0) return 'Today'
   const d = new Date(dateStr)
@@ -27,12 +64,6 @@ export default function DailyForecast({ daily }) {
     }
   }
 
-  const allHighs = days.map(d => d.day?.temperature || d.night?.temperature || 0)
-  const allLows = days.map(d => d.night?.temperature || d.day?.temperature || 0)
-  const absMax = Math.max(...allHighs)
-  const absMin = Math.min(...allLows)
-  const absRange = absMax - absMin || 1
-
   return (
     <div style={{
       background: 'rgba(255,255,255,0.07)',
@@ -50,12 +81,13 @@ export default function DailyForecast({ daily }) {
         const high = d.day?.temperature
         const low = d.night?.temperature
         const icon = getWeatherIcon(period?.icon, true)
-        const pop = d.day?.probabilityOfPrecipitation?.value || d.night?.probabilityOfPrecipitation?.value
+        const pop = d.day?.probabilityOfPrecipitation?.value ?? d.night?.probabilityOfPrecipitation?.value ?? 0
 
-        const lowNorm = low != null ? (low - absMin) / absRange : 0
-        const highNorm = high != null ? (high - absMin) / absRange : 1
-        const barLeft = `${lowNorm * 100}%`
-        const barWidth = `${(highNorm - lowNorm) * 100}%`
+        // Position within the -50 to 120°F scale
+        const lowVal = low ?? high ?? 32
+        const highVal = high ?? low ?? 32
+        const lowPct = ((lowVal - SCALE_MIN) / SCALE_RANGE) * 100
+        const highPct = ((highVal - SCALE_MIN) / SCALE_RANGE) * 100
 
         return (
           <div key={i}>
@@ -82,26 +114,37 @@ export default function DailyForecast({ daily }) {
               {/* Icon */}
               <WeatherIcon type={icon} size={28} style={{ flexShrink: 0 }} />
 
-              {/* Precip */}
+              {/* Precip — always shown, 0% default */}
               <span style={{ width: 36, fontSize: 12, color: '#4a9eff', fontWeight: 500, flexShrink: 0 }}>
-                {pop > 5 ? `${pop}%` : ''}
+                {pop}%
               </span>
 
-              {/* Temp bar */}
+              {/* Temp bar — Apple Weather style: full -50 to 120°F palette */}
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                 <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', width: 30, textAlign: 'right', flexShrink: 0 }}>
                   {low != null ? `${low}°` : '—'}
                 </span>
-                <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3, position: 'relative', minWidth: 60 }}>
+
+                <div style={{ flex: 1, height: 6, borderRadius: 3, position: 'relative', minWidth: 60 }}>
+                  {/* Full-scale gradient track (dimmed) */}
                   <div style={{
                     position: 'absolute',
-                    left: barLeft,
-                    width: barWidth,
+                    inset: 0,
+                    borderRadius: 3,
+                    background: FULL_GRADIENT,
+                    opacity: 0.2,
+                  }} />
+                  {/* Active range segment */}
+                  <div style={{
+                    position: 'absolute',
+                    left: `${lowPct}%`,
+                    width: `${Math.max(highPct - lowPct, 3)}%`,
                     height: '100%',
                     borderRadius: 3,
-                    background: 'linear-gradient(90deg, #4a9eff, #ffd166)',
+                    background: `linear-gradient(90deg, ${tempToRgb(lowVal)}, ${tempToRgb(highVal)})`,
                   }} />
                 </div>
+
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'white', width: 30, flexShrink: 0 }}>
                   {high != null ? `${high}°` : '—'}
                 </span>
