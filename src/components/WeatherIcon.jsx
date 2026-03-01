@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useId } from 'react'
 
 // Animated SVG weather icons
 export default function WeatherIcon({ type, size = 64, className = '' }) {
+  const uid = useId()
   const s = size
   const props = { width: s, height: s, viewBox: '0 0 64 64', className, style: { flexShrink: 0 } }
 
@@ -42,10 +43,20 @@ export default function WeatherIcon({ type, size = 64, className = '' }) {
     case 'clear_night':
       return (
         <svg {...props} xmlns="http://www.w3.org/2000/svg">
-          <path d="M38 10 C26 12 18 22 18 34 C18 46 28 56 40 56 C48 56 55 52 58 46 C54 47 50 48 46 48 C32 48 22 38 22 24 C22 18 24 12 28 8 C31 7 35 8 38 10 Z" fill="#B8D4FF" />
-          <circle cx="52" cy="14" r="2" fill="#FFD166" opacity="0.8" />
-          <circle cx="10" cy="22" r="1.5" fill="#FFD166" opacity="0.6" />
-          <circle cx="56" cy="30" r="1.5" fill="#FFD166" opacity="0.7" />
+          <defs>
+            <mask id={`moon-${uid}`}>
+              <rect width="64" height="64" fill="white" />
+              <circle cx="38" cy="24" r="17" fill="black" />
+            </mask>
+          </defs>
+          {/* Crescent moon via mask */}
+          <circle cx="28" cy="33" r="21" fill="#C8DAFF" mask={`url(#moon-${uid})`} />
+          {/* Stars */}
+          <circle cx="52" cy="12" r="2" fill="#FFD166" opacity="0.9" />
+          <circle cx="10" cy="20" r="1.5" fill="#FFD166" opacity="0.7" />
+          <circle cx="56" cy="38" r="1.5" fill="#FFD166" opacity="0.6" />
+          <circle cx="20" cy="8" r="1" fill="#FFD166" opacity="0.5" />
+          <circle cx="44" cy="52" r="1" fill="#FFD166" opacity="0.4" />
         </svg>
       )
 
@@ -72,20 +83,32 @@ export default function WeatherIcon({ type, size = 64, className = '' }) {
     case 'partly_cloudy_night':
       return (
         <svg {...props} xmlns="http://www.w3.org/2000/svg">
-          <path d="M22 6 C14 8 8 15 8 24 C8 31 12 37 18 40 C15 39 13 37 13 33 C13 25 19 18 28 18 C28 14 25 10 22 6 Z" fill="#B8D4FF" />
+          <defs>
+            <mask id={`moon-night-${uid}`}>
+              <rect width="64" height="64" fill="white" />
+              <circle cx="28" cy="14" r="13" fill="black" />
+            </mask>
+          </defs>
+          {/* Crescent moon via mask */}
+          <circle cx="20" cy="21" r="15" fill="#C8DAFF" mask={`url(#moon-night-${uid})`} />
+          {/* Clouds */}
           <rect x="14" y="36" width="38" height="17" rx="8.5" fill="white" opacity="0.95" />
           <ellipse cx="26" cy="36" rx="10" ry="8" fill="white" opacity="0.95" />
-          <ellipse cx="38" cy="34" rx="12" ry="9" fill="white" opacity="0.95" />
+          <ellipse cx="40" cy="33" rx="13" ry="9.5" fill="white" opacity="0.95" />
         </svg>
       )
 
     case 'cloudy':
       return (
         <svg {...props} xmlns="http://www.w3.org/2000/svg">
-          <rect x="8" y="36" width="48" height="20" rx="10" fill="#c8d8e8" />
-          <ellipse cx="24" cy="36" rx="12" ry="10" fill="#c8d8e8" />
-          <ellipse cx="38" cy="32" rx="16" ry="12" fill="#c8d8e8" />
-          <ellipse cx="50" cy="36" rx="10" ry="8" fill="#c8d8e8" />
+          {/* Back cloud (darker, slightly behind) */}
+          <ellipse cx="44" cy="30" rx="14" ry="10" fill="#8fa8bf" />
+          <rect x="30" y="30" width="28" height="14" rx="7" fill="#8fa8bf" />
+          {/* Front cloud */}
+          <rect x="8" y="36" width="46" height="18" rx="9" fill="#c8d8e8" />
+          <ellipse cx="22" cy="36" rx="13" ry="10" fill="#c8d8e8" />
+          <ellipse cx="38" cy="31" rx="16" ry="12" fill="#c8d8e8" />
+          <ellipse cx="50" cy="37" rx="10" ry="8" fill="#c8d8e8" />
         </svg>
       )
 
@@ -107,7 +130,13 @@ export default function WeatherIcon({ type, size = 64, className = '' }) {
     case 'rain_night':
       return (
         <svg {...props} xmlns="http://www.w3.org/2000/svg">
-          <path d="M16 4 C10 6 6 12 6 18 C6 22 8 26 12 28 C11 27 10 25 10 23 C10 17 15 12 22 12 C22 9 20 6 16 4 Z" fill="#B8D4FF" opacity="0.8" />
+          <defs>
+            <mask id={`moon-rain-${uid}`}>
+              <rect width="64" height="64" fill="white" />
+              <circle cx="22" cy="10" r="10" fill="black" />
+            </mask>
+          </defs>
+          <circle cx="15" cy="16" r="12" fill="#C8DAFF" opacity="0.85" mask={`url(#moon-rain-${uid})`} />
           <rect x="10" y="30" width="44" height="16" rx="8" fill="#8ab0cc" />
           <ellipse cx="22" cy="30" rx="10" ry="8" fill="#8ab0cc" />
           <ellipse cx="38" cy="27" rx="13" ry="9" fill="#8ab0cc" />
@@ -189,9 +218,13 @@ export default function WeatherIcon({ type, size = 64, className = '' }) {
     default:
       return (
         <svg {...props} xmlns="http://www.w3.org/2000/svg">
-          <rect x="8" y="28" width="48" height="20" rx="10" fill="#c8d8e8" />
-          <ellipse cx="22" cy="28" rx="12" ry="10" fill="#c8d8e8" />
-          <ellipse cx="38" cy="24" rx="16" ry="12" fill="#c8d8e8" />
+          {/* Back cloud */}
+          <ellipse cx="44" cy="30" rx="14" ry="10" fill="#8fa8bf" />
+          <rect x="30" y="30" width="28" height="14" rx="7" fill="#8fa8bf" />
+          {/* Front cloud */}
+          <rect x="8" y="36" width="46" height="18" rx="9" fill="#c8d8e8" />
+          <ellipse cx="22" cy="36" rx="13" ry="10" fill="#c8d8e8" />
+          <ellipse cx="38" cy="31" rx="16" ry="12" fill="#c8d8e8" />
         </svg>
       )
   }

@@ -63,11 +63,9 @@ export default function HourlyForecast({ hourly }) {
                 {isNow ? 'Now' : formatHour(p.startTime)}
               </div>
               <WeatherIcon type={icon} size={32} />
-              {p.probabilityOfPrecipitation?.value > 5 && (
-                <div style={{ fontSize: 11, color: '#4a9eff', fontWeight: 500 }}>
-                  {p.probabilityOfPrecipitation.value}%
-                </div>
-              )}
+              <div style={{ fontSize: 11, color: '#4a9eff', fontWeight: 500 }}>
+                {p.probabilityOfPrecipitation?.value ?? 0}%
+              </div>
               <div style={{ width: 4, height: barH, background: `hsl(${220 - (p.temperature - minT) / range * 60}, 80%, 65%)`, borderRadius: 2 }} />
               <div style={{ fontSize: 14, fontWeight: 600, color: 'white' }}>
                 {p.temperature}°

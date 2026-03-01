@@ -6,6 +6,8 @@ import HourlyForecast from './components/HourlyForecast.jsx'
 import DailyForecast from './components/DailyForecast.jsx'
 import RadarMap from './components/RadarMap.jsx'
 import SunriseSunset from './components/SunriseSunset.jsx'
+import WeatherIcon from './components/WeatherIcon.jsx'
+import { getWeatherIcon } from './utils/nws.js'
 
 const TABS = [
   { id: 'current', label: 'Now', icon: '◉' },
@@ -287,24 +289,23 @@ function HourlyDetailView({ hourly }) {
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
+                gap: 10,
                 padding: '9px 0',
                 borderBottom: '1px solid rgba(255,255,255,0.05)',
               }}>
                 <span style={{ width: 52, fontSize: 13, color: 'rgba(255,255,255,0.6)', flexShrink: 0 }}>
                   {d.getHours() === 0 ? '12 AM' : d.getHours() === 12 ? '12 PM' : d.getHours() < 12 ? `${d.getHours()} AM` : `${d.getHours() - 12} PM`}
                 </span>
-                <span style={{ fontSize: 18, fontWeight: 600, color: 'white', width: 44, flexShrink: 0 }}>
+                <WeatherIcon type={getWeatherIcon(p.icon, p.isDaytime)} size={26} />
+                <span style={{ fontSize: 18, fontWeight: 600, color: 'white', width: 40, flexShrink: 0 }}>
                   {p.temperature}°
                 </span>
-                <span style={{ flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>
+                <span style={{ flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.55)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {p.shortForecast}
                 </span>
-                {pop > 5 && (
-                  <span style={{ fontSize: 12, color: '#4a9eff', fontWeight: 500, flexShrink: 0 }}>
-                    {pop}%
-                  </span>
-                )}
+                <span style={{ fontSize: 12, color: '#4a9eff', fontWeight: 500, flexShrink: 0 }}>
+                  {pop ?? 0}%
+                </span>
                 <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
                   {p.windSpeed}
                 </span>
